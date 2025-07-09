@@ -36,12 +36,12 @@ option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 if(ENABLE_COVERAGE)
     # Imprime un mensaje en la consola para confirmar que la opción fue reconocida.
     message(STATUS "Code coverage enabled. Compiling with --coverage flag.")
-    
+
     # Añade la bandera '--coverage' a las opciones de compilación globales.
     # Esto le dice a GCC/Clang que instrumente el código para medir la cobertura,
     # generando los archivos .gcno durante la compilación.
     add_compile_options(--coverage)
-    
+
     # Añade la bandera '--coverage' a las opciones de enlazado globales.
     # Esto asegura que los ejecutables se enlacen con la librería gcov,
     # necesaria para que el programa pueda escribir los archivos de datos .gcda
@@ -56,6 +56,8 @@ endif()
 # Esto se hace siempre, ya sea que se compile como proyecto principal o como submódulo.
 add_subdirectory(lib/memory)
 
+# Enlaza la librería memory con libtirpc
+target_link_libraries(memory PRIVATE tirpc)
 
 # --- Configuración de Tests (SOLO si es el proyecto principal) ---
 
