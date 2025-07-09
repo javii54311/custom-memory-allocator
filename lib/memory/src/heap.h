@@ -8,32 +8,22 @@
 #include "memory_control.h"
 #include <stdbool.h>
 #include <stddef.h>
+#include <dlfcn.h> // Necesario para dlsym
 
 // --- Constantes del Heap ---
 #define ALIGNMENT 8
 #define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
 
-// --- Estructura del Bloque de Memoria (Simplificada) ---
-/**
- * @struct s_block
- * @brief Estructura de metadatos que precede a cada bloque de datos en el heap.
- * [CORRECCIÓN FINAL] Se elimina el data_ptr redundante y el flexible array member
- * para una definición más simple y portable. El área de datos del usuario
- * comienza inmediatamente después de esta estructura.
- */
+// --- Estructura del Bloque de Memoria ---
 struct s_block
 {
-    size_t size;          ///< Tamaño del área de datos del usuario (no incluye metadatos).
-    struct s_block* next; ///< Puntero al siguiente bloque en la lista.
-    struct s_block* prev; ///< Puntero al bloque anterior en la lista.
-    bool is_free;         ///< Flag booleano: true si el bloque está libre, false si está ocupado.
+    size_t size;
+    struct s_block* next;
+    struct s_block* prev;
+    bool is_free;
 };
 typedef struct s_block* block_ptr;
 
-/**
- * @brief Tamaño de los metadatos de un bloque.
- * [CORRECCIÓN FINAL] Se calcula directamente con sizeof sobre la estructura simplificada.
- */
 #define BLOCK_META_SIZE ALIGN(sizeof(struct s_block))
 
 // --- Variables Globales del Módulo ---
@@ -47,5 +37,6 @@ void split_block(block_ptr block, size_t size);
 block_ptr coalesce_blocks(block_ptr block);
 block_ptr get_block_from_ptr(void* p);
 bool is_valid_address(void* p);
+void* get_original_malloc(size_t size); // Prototipo para llamar al malloc de libc
 
 #endif // HEAP_H
