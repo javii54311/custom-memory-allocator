@@ -1,11 +1,6 @@
 /**
  * @file heap.h
  * @brief Declaraciones internas para la gestión del heap.
- *
- * Este es un header PRIVADO. No debe ser incluido por clientes externos.
- * Define la estructura de los bloques de memoria, constantes críticas
- * y los prototipos de las funciones de bajo nivel que manipulan directamente
- * la lista de bloques del heap.
  */
 #ifndef HEAP_H
 #define HEAP_H
@@ -16,62 +11,46 @@
 
 // --- Constantes del Heap ---
 
-/** @brief Alineación de memoria en bytes. Todas las asignaciones se alinearán a este valor. */
+/** @brief Alineación de memoria en bytes. */
 #define ALIGNMENT 8
 
 /**
- * @brief Macro para alinear un tamaño de bytes al siguiente múltiplo de ALIGNMENT.
- *
- * Esta operación matemática asegura que todos los bloques de memoria y sus
- * metadatos comiencen en direcciones de memoria que son múltiplos de 8,
- * lo cual es eficiente y a menudo requerido por ciertas arquitecturas de CPU.
+ * @brief Macro para alinear un tamaño al siguiente múltiplo de ALIGNMENT.
+ * Esta es una forma estándar y eficiente de hacerlo usando operaciones de bits.
  */
 #define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
-
 
 // --- Estructura del Bloque de Memoria ---
 
 /**
  * @struct s_block
  * @brief Estructura de metadatos que precede a cada bloque de datos en el heap.
- *
- * Esta estructura forma una lista doblemente enlazada de todos los bloques
- * de memoria, tanto libres como ocupados.
  */
 struct s_block
 {
-    size_t size;          ///< Tamaño del área de datos (no incluye estos metadatos).
+    size_t size;          ///< Tamaño del área de datos del usuario (no incluye estos metadatos).
     struct s_block* next; ///< Puntero al siguiente bloque en la lista.
     struct s_block* prev; ///< Puntero al bloque anterior en la lista.
     bool is_free;         ///< Flag booleano: true si el bloque está libre, false si está ocupado.
-    void* data_ptr;       ///< Puntero de "verificación" al inicio del área de datos. Ayuda a validar punteros.
-    char data[];          ///< [CAMBIO CLAVE] Miembro de array flexible (C99). El área de datos del usuario comienza aquí.
+    void* data_ptr;       ///< Puntero de "verificación" al inicio del área de datos. Útil para depurar.
+    char data[];          ///< [CORRECCIÓN CLAVE] Miembro de array flexible (C99). El área de datos del usuario comienza aquí.
 };
 typedef struct s_block* block_ptr;
-
 
 /**
  * @brief Tamaño de los metadatos de un bloque.
  *
- * [CAMBIO CLAVE] Se calcula como el offset del campo 'data'. Esto es más robusto
- * que usar sizeof(struct s_block), especialmente con el flexible array member,
- * ya que nos da el tamaño exacto de la estructura sin el campo 'data'.
- * Luego se alinea para asegurar que el área de datos que le sigue
- * comience en una dirección de memoria alineada.
+ * [CORRECCIÓN CLAVE] Se calcula usando offsetof, que da el tamaño de la estructura
+ * sin incluir el flexible array member. Es la forma más robusta y estándar.
  */
 #define BLOCK_META_SIZE ALIGN(offsetof(struct s_block, data))
 
 
 // --- Variables Globales del Módulo ---
-
-/** @brief Puntero a la base (inicio) de la lista de bloques del heap. */
 extern block_ptr heap_base;
-
-/** @brief Política de asignación actualmente en uso (FIRST_FIT, BEST_FIT, WORST_FIT). */
 extern allocation_policy_t current_policy;
 
 // --- Prototipos de Funciones Internas ---
-
 block_ptr find_free_block(block_ptr* last, size_t size);
 block_ptr extend_heap(block_ptr last, size_t size);
 void split_block(block_ptr block, size_t size);

@@ -184,8 +184,10 @@ block_ptr coalesce_blocks(block_ptr block)
  */
 block_ptr get_block_from_ptr(void* p)
 {
-    // La magia está en restar el offset de los metadatos.
-    return (block_ptr)((char*)p - offsetof(struct s_block, data));
+    // [CORRECCIÓN CLAVE] El puntero de datos del usuario está en la dirección
+    // del bloque + el tamaño de los metadatos. La operación inversa es restar
+    // ese tamaño. Esto es ahora consistente con la nueva definición de BLOCK_META_SIZE.
+    return (block_ptr)((char*)p - BLOCK_META_SIZE);
 }
 
 /**

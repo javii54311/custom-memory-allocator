@@ -18,7 +18,6 @@ void* custom_malloc(size_t size)
         return NULL;
     }
 
-    // Aseguramos que el tamaño solicitado esté alineado a un múltiplo de 8.
     size_t aligned_size = ALIGN(size);
     block_ptr block;
     block_ptr last = heap_base;
@@ -52,8 +51,15 @@ void* custom_malloc(size_t size)
         heap_base = block;
     }
 
-    log_event("malloc: Requested %zu, Allocated %zu at %p", size, aligned_size, block->data_ptr);
-    return block->data_ptr;
+    // [CORRECCIÓN CLAVE] El puntero de usuario es la dirección del bloque de metadatos
+    // MÁS el tamaño de los metadatos. El área de datos comienza justo después.
+    void* user_ptr = (char*)block + BLOCK_META_SIZE;
+
+    // Actualizamos el data_ptr de verificación para que apunte al inicio del área de usuario.
+    block->data_ptr = user_ptr;
+
+    log_event("malloc: Requested %zu, Allocated %zu at %p", size, aligned_size, user_ptr);
+    return user_ptr;
 }
 
 void custom_free(void* p)
@@ -97,8 +103,11 @@ void* custom_calloc(size_t number, size_t size)
     if (p)
     {
         // Si la asignación fue exitosa, inicializamos la memoria a cero.
-        memset(p, 0, ALIGN(total_size));
-        log_event("calloc: Allocated and zeroed %zu bytes at %p", total_size, p);
+        // Ojo: el tamaño real asignado puede ser mayor por la alineación.
+        // Usamos el tamaño del bloque para memset para ser precisos.
+        block_ptr block = get_block_from_ptr(p);
+        memset(p, 0, block->size);
+        log_event("calloc: Allocated and zeroed %zu bytes at %p", block->size, p);
     }
     return p;
 }
