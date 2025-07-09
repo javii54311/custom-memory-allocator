@@ -1,0 +1,41 @@
+name: "Test and Coverage Check"
+description: "Runs tests and checks if code coverage is above 5%."
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Run Tests"
+      shell: bash
+      run: |
+        cd build
+        # Ejecutamos los tests. Si alguno falla, el comando ctest devolverá un código de error,
+        # y el workflow fallará, lo cual es el comportamiento deseado.
+        ctest --verbose --output-on-failure
+
+    - name: "Generate and Check Coverage"
+      shell: bash
+      run: |
+        # Navegamos al directorio de build donde están los datos de cobertura
+        cd build
+
+        # 1. Capturar y filtrar los datos de cobertura
+        lcov --capture --directory . --output-file coverage.info
+        lcov --remove coverage.info '*/external/*' --output-file coverage.info
+        
+        # 2. Imprimir el resumen en la consola del workflow
+        echo "--- LCOV Coverage Summary ---"
+        lcov --list coverage.info
+        echo "-----------------------------"
+
+        # 3. Extraer el porcentaje de cobertura de líneas
+        COVERAGE_PERCENTAGE=$(lcov --summary coverage.info | grep "lines..." | awk '{print $2}' | sed 's/%//')
+
+        # 4. Comparar el porcentaje con el umbral requerido (5%)
+        # Usamos 'bc' para comparar números flotantes
+        if (( $(echo "$COVERAGE_PERCENTAGE > 5.0" | bc -l) )); then
+          echo "✅ Coverage is ${COVERAGE_PERCENTAGE}%, which is above the 5% threshold."
+          exit 0
+        else
+          echo "❌ Coverage is ${COVERAGE_PERCENTAGE}%, which is below the 5% threshold."
+          exit 1
+        fi

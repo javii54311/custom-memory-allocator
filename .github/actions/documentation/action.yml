@@ -1,0 +1,26 @@
+name: "Documentation Check"
+description: "Code documentation generation with Doxygen."
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Generate Doxyfile"
+      shell: bash
+      run: |
+        # Generamos un Doxyfile básico sobre la marcha
+        (
+            echo "PROJECT_NAME      = MemoryManager"
+            echo "OUTPUT_DIRECTORY  = docs"
+            echo "INPUT             = ${{ github.workspace }}/lib/memory/include"
+            echo "RECURSIVE         = YES"
+            echo "GENERATE_LATEX    = NO"
+            echo "EXTRACT_ALL       = YES"
+            echo "QUIET             = YES"
+            echo "WARN_IF_UNDOCUMENTED = NO" # Lo ponemos en NO para no ser tan estrictos
+        ) > Doxyfile
+
+    - name: "Run Doxygen"
+      shell: bash
+      run: |
+        # Ejecutamos doxygen. Si hay errores o warnings importantes, el comando fallará.
+        doxygen Doxyfile

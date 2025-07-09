@@ -1,0 +1,52 @@
+name: "CI Quality Assurance"
+
+# --- Disparadores del Workflow ---
+on:
+  # Se ejecuta en cada push y Pull Request que apunta a la rama 'master'
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  # Permite la ejecución manual desde la pestaña "Actions"
+  workflow_dispatch:
+
+jobs:
+  quality-check:
+    # El trabajo se ejecutará en la última versión de Ubuntu disponible en GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # --- Paso 1: Clonar el Repositorio ---
+      # Clona el código de la rama actual en el runner.
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+        with:
+          # ¡Crucial! Le dice a la acción que clone también los submódulos (como Unity).
+          submodules: 'recursive'
+
+      # --- Paso 2: Instalar Dependencias del Sistema ---
+      # Instala todas las herramientas que necesitaremos para compilar y analizar.
+      - name: "Install dependencies"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake clang-format doxygen lcov bc
+
+      # --- Paso 3: Comprobar el Estilo del Código ---
+      # Utiliza nuestra action personalizada para ejecutar clang-format.
+      - name: "Check code style"
+        uses: ./.github/actions/style
+
+      # --- Paso 4: Comprobar la Documentación ---
+      # Utiliza nuestra action personalizada para ejecutar doxygen.
+      - name: "Check documentation"
+        uses: ./.github/actions/documentation
+
+      # --- Paso 5: Compilar el Proyecto ---
+      # Utiliza nuestra action personalizada para configurar con CMake y compilar con make.
+      - name: "Build project"
+        uses: ./.github/actions/building
+      
+      # --- Paso 6: Ejecutar Tests y Verificar Cobertura ---
+      # Utiliza nuestra action personalizada para correr ctest y lcov.
+      - name: "Run tests and check coverage"
+        uses: ./.github/actions/coverage_and_test

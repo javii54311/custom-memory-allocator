@@ -1,0 +1,23 @@
+name: "Style Check"
+description: "Style check using clang-format on the library and test source files."
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Run clang-format"
+      shell: bash
+      run: |
+        # Definimos una variable para guardar los archivos a verificar
+        SOURCE_FILES=""
+        
+        # Buscamos archivos .c y .h en los directorios de la librería y los tests
+        SOURCE_FILES+=$(find ${{ github.workspace }}/lib -type f \( -name "*.h" -or -name "*.c" \))
+        SOURCE_FILES+=" " # Añadimos un espacio
+        SOURCE_FILES+=$(find ${{ github.workspace }}/test -type f \( -name "*.h" -or -name "*.c" \))
+
+        echo "Checking style for files:"
+        echo "$SOURCE_FILES"
+
+        # -n: Ejecuta en modo "dry run". No modifica los archivos, solo reporta si necesitan cambios.
+        # --Werror: Trata las advertencias de formato como errores, haciendo que el paso falle.
+        clang-format -n --Werror $SOURCE_FILES

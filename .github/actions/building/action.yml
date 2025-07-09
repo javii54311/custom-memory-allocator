@@ -1,0 +1,14 @@
+name: "Build Project"
+description: "Builds the library and test executables."
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Configure and Compile"
+      shell: bash
+      run: |
+        mkdir build
+        cd build
+        # Compilamos con la opción de cobertura activada para el siguiente paso
+        cmake -DENABLE_COVERAGE=ON ..
+        make
