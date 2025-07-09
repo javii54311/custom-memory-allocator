@@ -5,46 +5,36 @@
 #ifndef HEAP_H
 #define HEAP_H
 
-#include "memory_control.h" // Para allocation_policy_t
+#include "memory_control.h"
 #include <stdbool.h>
 #include <stddef.h>
 
 // --- Constantes del Heap ---
-
-/** @brief Alineación de memoria en bytes. */
 #define ALIGNMENT 8
-
-/**
- * @brief Macro para alinear un tamaño al siguiente múltiplo de ALIGNMENT.
- * Esta es una forma estándar y eficiente de hacerlo usando operaciones de bits.
- */
 #define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
 
-// --- Estructura del Bloque de Memoria ---
-
+// --- Estructura del Bloque de Memoria (Simplificada) ---
 /**
  * @struct s_block
  * @brief Estructura de metadatos que precede a cada bloque de datos en el heap.
+ * [CORRECCIÓN FINAL] Se elimina el data_ptr redundante y el flexible array member
+ * para una definición más simple y portable. El área de datos del usuario
+ * comienza inmediatamente después de esta estructura.
  */
 struct s_block
 {
-    size_t size;          ///< Tamaño del área de datos del usuario (no incluye estos metadatos).
+    size_t size;          ///< Tamaño del área de datos del usuario (no incluye metadatos).
     struct s_block* next; ///< Puntero al siguiente bloque en la lista.
     struct s_block* prev; ///< Puntero al bloque anterior en la lista.
     bool is_free;         ///< Flag booleano: true si el bloque está libre, false si está ocupado.
-    void* data_ptr;       ///< Puntero de "verificación" al inicio del área de datos. Útil para depurar.
-    char data[];          ///< [CORRECCIÓN CLAVE] Miembro de array flexible (C99). El área de datos del usuario comienza aquí.
 };
 typedef struct s_block* block_ptr;
 
 /**
  * @brief Tamaño de los metadatos de un bloque.
- *
- * [CORRECCIÓN CLAVE] Se calcula usando offsetof, que da el tamaño de la estructura
- * sin incluir el flexible array member. Es la forma más robusta y estándar.
+ * [CORRECCIÓN FINAL] Se calcula directamente con sizeof sobre la estructura simplificada.
  */
-#define BLOCK_META_SIZE ALIGN(offsetof(struct s_block, data))
-
+#define BLOCK_META_SIZE ALIGN(sizeof(struct s_block))
 
 // --- Variables Globales del Módulo ---
 extern block_ptr heap_base;
