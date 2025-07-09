@@ -66,6 +66,7 @@ block_ptr extend_heap(block_ptr last, size_t size) {
 }
 
 void split_block(block_ptr block, size_t size) {
+    // Solo dividimos si el espacio sobrante es suficiente para otro bloque.
     if (block->size >= size + BLOCK_META_SIZE + ALIGNMENT) {
         block_ptr new_fragment = (block_ptr)((char*)block + BLOCK_META_SIZE + size);
         new_fragment->size = block->size - size - BLOCK_META_SIZE;
@@ -106,7 +107,6 @@ block_ptr coalesce_blocks(block_ptr block) {
 }
 
 block_ptr get_block_from_ptr(void* p) {
-    // [CORRECCIÓN FINAL] Cálculo robusto del puntero al bloque.
     return (block_ptr)((char*)p - BLOCK_META_SIZE);
 }
 
@@ -116,8 +116,6 @@ bool is_valid_address(void* p) {
     }
     block_ptr current = heap_base;
     while (current) {
-        // [CORRECCIÓN FINAL] Se comprueba si el puntero de usuario coincide con la
-        // dirección esperada de los datos de un bloque ocupado.
         if (!current->is_free && (void*)((char*)current + BLOCK_META_SIZE) == p) {
             return true;
         }
