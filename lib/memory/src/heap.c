@@ -131,13 +131,15 @@ void split_block(block_ptr block, size_t size)
 }
 
 /**
- * @brief Fusiona un bloque con sus vecinos si están libres.
+ * @brief Fusiona un bloque con sus vecinos si están libres Y SON CONTIGUOS.
+ *
+ * Esta es la versión final y robusta, consciente de la naturaleza no contigua de mmap.
  */
 block_ptr coalesce_blocks(block_ptr block)
 {
-    // Fusionar con el bloque anterior si es contiguo y está libre.
-    // La condición de contigüidad es clave aquí.
-    if (block->prev && block->prev->is_free && (char*)block->prev + BLOCK_META_SIZE + block->prev->size == (char*)block) {
+    // Fusionar con el bloque anterior si está libre y es físicamente contiguo.
+    if (block->prev && block->prev->is_free &&
+        ((char*)block->prev + BLOCK_META_SIZE + block->prev->size == (char*)block)) {
         log_event("coalesce: Fusing with prev %p", (void*)block->prev);
         block->prev->size += BLOCK_META_SIZE + block->size;
         block->prev->next = block->next;
@@ -147,8 +149,9 @@ block_ptr coalesce_blocks(block_ptr block)
         block = block->prev;
     }
 
-    // Fusionar con el bloque siguiente si es contiguo y está libre.
-    if (block->next && block->next->is_free && (char*)block + BLOCK_META_SIZE + block->size == (char*)block->next) {
+    // Fusionar con el bloque siguiente si está libre y es físicamente contiguo.
+    if (block->next && block->next->is_free &&
+        ((char*)block + BLOCK_META_SIZE + block->size == (char*)block->next)) {
         log_event("coalesce: Fusing with next %p", (void*)block->next);
         block->size += BLOCK_META_SIZE + block->next->size;
         block->next = block->next->next;
@@ -158,6 +161,7 @@ block_ptr coalesce_blocks(block_ptr block)
     }
     return block;
 }
+
 
 /**
  * @brief Obtiene el puntero al inicio del bloque de metadatos desde el puntero de usuario.
