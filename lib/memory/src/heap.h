@@ -26,16 +26,8 @@
  * metadatos comiencen en direcciones de memoria que son múltiplos de 8,
  * lo cual es eficiente y a menudo requerido por ciertas arquitecturas de CPU.
  */
-#define ALIGN(size) (((size - 1) / ALIGNMENT) * ALIGNMENT + ALIGNMENT)
+#define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
 
-/**
- * @brief Tamaño de los metadatos de un bloque, alineado.
- *
- * Calcula el espacio que ocupa la estructura de control (s_block) y lo alinea
- * para asegurar que el área de datos subsiguiente también comience en una
- * dirección de memoria alineada.
- */
-#define BLOCK_META_SIZE ALIGN(sizeof(struct s_block))
 
 // --- Estructura del Bloque de Memoria ---
 
@@ -53,9 +45,22 @@ struct s_block
     struct s_block* prev; ///< Puntero al bloque anterior en la lista.
     bool is_free;         ///< Flag booleano: true si el bloque está libre, false si está ocupado.
     void* data_ptr;       ///< Puntero de "verificación" al inicio del área de datos. Ayuda a validar punteros.
-    char data[1];         ///< Marcador flexible. El área de datos del usuario comienza aquí.
+    char data[];          ///< [CAMBIO CLAVE] Miembro de array flexible (C99). El área de datos del usuario comienza aquí.
 };
 typedef struct s_block* block_ptr;
+
+
+/**
+ * @brief Tamaño de los metadatos de un bloque.
+ *
+ * [CAMBIO CLAVE] Se calcula como el offset del campo 'data'. Esto es más robusto
+ * que usar sizeof(struct s_block), especialmente con el flexible array member,
+ * ya que nos da el tamaño exacto de la estructura sin el campo 'data'.
+ * Luego se alinea para asegurar que el área de datos que le sigue
+ * comience en una dirección de memoria alineada.
+ */
+#define BLOCK_META_SIZE ALIGN(offsetof(struct s_block, data))
+
 
 // --- Variables Globales del Módulo ---
 
