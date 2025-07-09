@@ -52,21 +52,29 @@ endif()
 
 # --- Gestión de Subdirectorios ---
 
-# 'add_subdirectory()' le dice a CMake que entre en un directorio,
-# busque otro archivo CMakeLists.txt allí, y lo procese.
-
-# 1. Dependencias Externas:
-#    Procesamos primero las dependencias para que sus targets (como 'unity')
-#    estén definidos y disponibles para el resto del proyecto.
-add_subdirectory(external/unity)
-
-# 2. Componentes del Proyecto:
-#    Procesamos el directorio de nuestra librería de memoria. Esto creará el target 'memory'.
+# Procesamos el directorio de nuestra librería de memoria. Esto creará el target 'memory'.
+# Esto se hace siempre, ya sea que se compile como proyecto principal o como submódulo.
 add_subdirectory(lib/memory)
 
-# 3. Entorno de Testing:
-#    'enable_testing()' activa el framework de testing de CMake, permitiendo usar CTest.
-enable_testing()
-#    Procesamos el directorio de tests. Su CMakeLists.txt podrá ahora usar
-#    los targets 'unity' y 'memory' que ya hemos definido.
-add_subdirectory(test)
+
+# --- Configuración de Tests (SOLO si es el proyecto principal) ---
+
+# La variable CMAKE_SOURCE_DIR apunta al directorio del proyecto de más alto nivel.
+# CMAKE_CURRENT_SOURCE_DIR apunta al directorio del CMakeLists.txt actual.
+# Si son iguales, significa que estamos compilando este proyecto como el principal.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+
+    message(STATUS "Building MemoryManager as a standalone project. Enabling tests.")
+
+    # 1. Dependencias Externas (Unity):
+    #    Solo las procesamos si estamos en modo standalone.
+    add_subdirectory(external/unity)
+
+    # 2. Entorno de Testing:
+    #    Activamos CTest y procesamos el directorio de tests.
+    enable_testing()
+    add_subdirectory(test)
+
+else()
+    message(STATUS "Building MemoryManager as a sub-project. Skipping tests.")
+endif()
